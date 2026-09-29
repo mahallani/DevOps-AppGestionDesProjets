@@ -1,0 +1,51 @@
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: gestion-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: devops_db
+      MYSQL_USER: devops
+      MYSQL_PASSWORD: devops123
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - gestion-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    image: gestion-backend:1.0
+    container_name: gestion-backend
+    ports:
+      - "8081:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - gestion-network
+
+  frontend:
+    build:
+      context: ./frontend
+    image: gestion-frontend:1.0
+    container_name: gestion-frontend
+    ports:
+      - "8083:80"
+    depends_on:
+      - backend
+    networks:
+      - gestion-network
+
+volumes:
+  mysql-data:
+
+networks:
+  gestion-network:
+    driver: bridge
